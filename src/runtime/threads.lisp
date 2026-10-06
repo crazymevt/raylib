@@ -79,3 +79,66 @@ printing a backtrace and setting *LAST-ERROR*. Use (stop) to end a game loop.
     (if wait
         (progn #+sbcl (sb-thread:wait-on-semaphore done) result)
         (values))))
+
+;;; After the window closes (macOS)
+;;;
+;;; GLFW closes a window on macOS only once its events are handled, and the
+;;; process stays the active app. Run from an editor's Lisp, the main thread
+;;; then goes back to reading standard input and handles no events, so the
+;;; closed window stays on screen with a spinning wheel. CLOSE-WINDOW is
+;;; followed by RELEASE-APP: handle what's pending, and stop being an app
+;;; (no Dock icon), which gives activation back to the one used before.
+;;; PREPARE-APP undoes that before the next window opens.
+
+#+darwin
+(progn
+  (defun objc-class (name) (cffi:foreign-funcall "objc_getClass" :string name :pointer))
+  (defun objc-selector (name) (cffi:foreign-funcall "sel_registerName" :string name :pointer))
+
+  (defun shared-application ()
+    "NSApp, or NIL if this process has never made one."
+    (let ((class (objc-class "NSApplication")))
+      (unless (cffi:null-pointer-p class)
+        (let ((app (cffi:foreign-funcall "objc_msgSend" :pointer class
+                                                        :pointer (objc-selector "sharedApplication") :pointer)))
+          (unless (cffi:null-pointer-p app) app)))))
+
+  (defun set-activation-policy (app policy)
+    "POLICY: 0 regular (Dock icon, menu bar), 2 prohibited (neither)."
+    (cffi:foreign-funcall "objc_msgSend" :pointer app :pointer (objc-selector "setActivationPolicy:")
+                                         :long policy :boolean))
+
+  (defun handle-pending-events (app &key (seconds 0.3))
+    "Handle the window-system events that arrive within SECONDS."
+    (let ((mode (cffi:mem-ref (cffi:foreign-symbol-pointer "NSDefaultRunLoopMode") :pointer))
+          (past (cffi:foreign-funcall "objc_msgSend" :pointer (objc-class "NSDate")
+                                                     :pointer (objc-selector "distantPast") :pointer))
+          (next (objc-selector "nextEventMatchingMask:untilDate:inMode:dequeue:"))
+          (send (objc-selector "sendEvent:")))
+      (loop repeat (max 1 (round seconds 0.02))
+            do (let ((pool (cffi:foreign-funcall "objc_autoreleasePoolPush" :pointer)))
+                 (loop for event = (cffi:foreign-funcall "objc_msgSend" :pointer app :pointer next
+                                                                        :unsigned-long-long #xFFFFFFFFFFFFFFFF
+                                                                        :pointer past :pointer mode :boolean t
+                                                                        :pointer)
+                       until (cffi:null-pointer-p event)
+                       do (cffi:foreign-funcall "objc_msgSend" :pointer app :pointer send :pointer event :void))
+                 (cffi:foreign-funcall "objc_autoreleasePoolPop" :pointer pool :void))
+               (sleep 0.02)))))
+
+(defun prepare-app ()
+  "Before a window opens: be a regular app again, if RELEASE-APP made this one stop."
+  #+darwin (ignore-errors
+            (let ((app (shared-application)))
+              (when app (set-activation-policy app 0))))
+  (values))
+
+(defun release-app ()
+  "After the window closes: let it go from the screen, and stop being the active app."
+  #+darwin (ignore-errors
+            (let ((app (shared-application)))
+              (when app
+                (handle-pending-events app)
+                (set-activation-policy app 2)
+                (handle-pending-events app :seconds 0.1))))
+  (values))

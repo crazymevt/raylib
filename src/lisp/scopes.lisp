@@ -15,6 +15,7 @@
   (set-trace-log-level log-level)
   (when flags (set-config-flags flags))
   (with-float-traps-masked
+    (prepare-app)
     (init-window width height title)
     (unwind-protect
          (progn
@@ -23,7 +24,8 @@
            (when fps (set-target-fps fps))
            (set-exit-key (or exit-key :null))
            (funcall function))
-      (close-window))))
+      (close-window)
+      (release-app))))
 
 (defmacro with-window ((width height title &rest options &key fps flags exit-key log-level) &body body)
   "Open a WIDTH x HEIGHT window titled TITLE, run BODY, and close it.
