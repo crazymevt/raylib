@@ -1,11 +1,16 @@
 SBCL ?= sbcl
 LISP = $(SBCL) --non-interactive --eval '(push (truename ".") asdf:*central-registry*)'
 
-.PHONY: generate test walker
+.PHONY: generate docset test walker
 
 generate:
 	$(LISP) --eval '(ql:quickload :raylib-generator :silent t)' \
 	        --eval '(raylib.generator:generate)'
+
+# The API and the Lisp layer as a docset for the spec browser, in docs/docset/
+docset:
+	$(LISP) --eval '(ql:quickload :raylib-generator :silent t)' \
+	        --eval '(raylib.generator:generate-docset)'
 
 test:
 	$(LISP) --eval '(ql:quickload :raylib/tests :silent t)' \

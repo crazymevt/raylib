@@ -2,4 +2,4 @@
 
 (defpackage #:raylib.generator
   (:use #:cl)
-  (:export #:generate #:lisp-name #:load-api))
+  (:export #:generate #:generate-docset #:lisp-name #:load-api))
