@@ -132,6 +132,10 @@ loop calls, as `examples/walker.lisp` does.
 | `src/runtime/` | The macros behind the declarations, library loading, the main-thread runner |
 | `src/lisp/` | The Lispy layer |
 
+`spec/raylib.h` and `spec/raylib_api.json` are raylib's own, under its
+[zlib license](https://github.com/raysan5/raylib/blob/master/LICENSE); the rest
+is MIT (see [LICENSE](LICENSE)).
+
 Functions that pass or return structs by value go through the shim, so no
 libffi is needed and calls take tens of nanoseconds. On load, the bindings
 check that every struct is the same size in Lisp as in C.
