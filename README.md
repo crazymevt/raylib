@@ -21,6 +21,34 @@ API description, with a thin Lispy layer for writing games from the REPL.
 - raylib 6.0: `brew install raylib` (macOS), or your package manager
 - A C compiler (macOS: `xcode-select --install`). On first load, the bindings
   compile a small C shim into `build/`.
+- For the generator and the tests only: the
+  [docset library](https://github.com/crazymevt/docset), which writes the API
+  as a docset.
+
+## Installing
+
+The bindings aren't in Quicklisp's dist. Put this folder where Quicklisp finds
+local projects, `~/quicklisp/local-projects/raylib`, or keep it elsewhere and
+link it there:
+
+```sh
+ln -s ~/projects/lisp/raylib ~/quicklisp/local-projects/raylib
+```
+
+Then `(ql:quickload :raylib)` from any Lisp; Quicklisp fetches cffi and
+alexandria. If Quicklisp doesn't see a new folder, run
+`(ql:register-local-projects)` once.
+
+For the generator and the tests, add the docset library the same way:
+
+```sh
+git clone https://github.com/crazymevt/docset.git ~/projects/lisp/docset
+ln -s ~/projects/lisp/docset ~/quicklisp/local-projects/docset
+```
+
+Make targets: `make test`, `make generate`, `make docset` (the API as a
+docset in `docs/docset/`, for Cadre and spec-browser), and `make walker`
+(the example game).
 
 ## Using it
 
