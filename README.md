@@ -27,11 +27,17 @@ API description, with a thin Lispy layer for writing games from the REPL.
 
 ## Installing
 
-The bindings aren't in Quicklisp's dist. Put this folder where Quicklisp finds
-local projects, `~/quicklisp/local-projects/raylib`, or keep it elsewhere and
-link it there:
+The bindings aren't in Quicklisp's dist. Check them out where Quicklisp finds
+local projects:
 
 ```sh
+git clone https://github.com/crazymevt/raylib.git ~/quicklisp/local-projects/raylib
+```
+
+Or keep the checkout elsewhere and link it in:
+
+```sh
+git clone https://github.com/crazymevt/raylib.git ~/projects/lisp/raylib
 ln -s ~/projects/lisp/raylib ~/quicklisp/local-projects/raylib
 ```
 
