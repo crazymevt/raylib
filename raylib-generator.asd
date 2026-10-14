@@ -4,7 +4,7 @@
   :description "Reads raylib's API description and emits src/generated/raylib.lisp and shim.c."
   :author "Jessie Hughart"
   :license "MIT"
-  :depends-on ("com.inuoe.jzon" "cl-ppcre"
+  :depends-on ("com.inuoe.jzon" "cl-ppcre" "docset"
                ;; Only so the docset can read the Lisp layer's source, which names them
                "cffi" "alexandria")
   :pathname "generator/"

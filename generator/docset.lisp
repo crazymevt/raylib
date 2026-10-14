@@ -3,48 +3,10 @@
 ;;;; Every function, struct, accessor and enum from raylib_api.json, grouped by
 ;;;; the module and section raylib.h declares them in, plus the hand-written
 ;;;; Lisp layer (with-window, game-loop, vec2, ...) read from its source, and
-;;;; the README. The format is described in spec-browser's
-;;;; docs/docset-format.md; WRITE-DOCSET is a copy of spec-browser's, so the
-;;;; generator does not depend on it.
+;;;; the README, written with the docset library's WRITE-DOCSET. The format
+;;;; is described in docset's docs/format.md.
 
 (in-package #:raylib.generator)
-
-;;; Writing a docset
-
-(defun write-docset-data (form stream)
-  (with-standard-io-syntax
-    (let ((*print-case* :downcase) (*print-pretty* nil) (*print-readably* nil))
-      (prin1 form stream))))
-
-(defun write-docset (directory manifest entries)
-  "Write MANIFEST and ENTRIES (each (:entry id . plist)) as a docset in DIRECTORY."
-  (ensure-directories-exist directory)
-  (let ((index '()))
-    (with-open-file (out (merge-pathnames "entries.sexp" directory) :direction :output
-                         :if-exists :supersede :external-format :utf-8)
-      (dolist (entry entries)
-        (let ((plist (cddr entry)))
-          (push (append (list (second entry))
-                        (loop for key in '(:names :kind :kind-name :package :parent :summary)
-                              when (getf plist key) append (list key (getf plist key)))
-                        (list :position (file-position out)))
-                index))
-        (write-docset-data entry out)
-        (terpri out)))
-    (with-open-file (out (merge-pathnames "index.sexp" directory) :direction :output
-                         :if-exists :supersede :external-format :utf-8)
-      (write-string "(" out)
-      (dolist (record (nreverse index))
-        (terpri out)
-        (write-docset-data record out))
-      (format out ")~%"))
-    (with-open-file (out (merge-pathnames "manifest.sexp" directory) :direction :output
-                         :if-exists :supersede :external-format :utf-8)
-      (write-docset-data (append (list :format 1)
-                                 (loop for (k v) on manifest by #'cddr unless (eq k :toc) append (list k v))
-                                 (list :entry-count (length entries) :toc (getf manifest :toc)))
-                         out)
-      (terpri out))))
 
 (defun entry (id names kind kind-name sections &key (package "RAYLIB") parent children summary)
   (append (list :entry id :names names :kind kind :kind-name kind-name)
@@ -435,7 +397,7 @@ struct it takes, or the C type."
                  (s (or (assoc section (cdr m) :test #'string=)
                         (car (setf (cdr m) (append (cdr m) (list (list section))))))))
             (setf (cdr s) (append (cdr s) (list (lisp-name (j f "name"))))))))
-      (write-docset directory
+      (docset:write-docset directory
                     (list :id "raylib"
                           :title "raylib"
                           :subtitle "raylib 6.0 bindings for Common Lisp"
